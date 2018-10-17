@@ -1,22 +1,16 @@
 CREATE DIRECTORY MEDIA_FILES AS '/home/oracle/MEDIA_FILES';
 commit;
 
-CREATE TABLE ingredients_images (
-  id NUMBER PRIMARY KEY,
-  name VARCHAR2(50) NOT NULL,
-  image_tab ORDIMAGE NOT NULL
-);
-
 DECLARE
     image ORDImage;
     ctx RAW(64) := NULL;
     row_id urowid;
 BEGIN
-    INSERT INTO ingredients_images (id, name, image_tab)
+    INSERT INTO ingredients (id, name, image)
     VALUES (1,'arbuz.jpg', ORDImage.init('FILE', 'MEDIA_FILES','arbuz.jpg'))
-    RETURNING image_tab,rowid INTO image, row_id;
+    RETURNING image,rowid INTO image, row_id;
     image.import(ctx);
-    UPDATE ingredients_images SET image_tab = image WHERE rowid = row_id;
+    UPDATE ingredients SET image = image WHERE rowid = row_id;
     COMMIT;
 END;
 /

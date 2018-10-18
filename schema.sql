@@ -14,6 +14,22 @@ CREATE TABLE authors (
   phone_no VARCHAR(10)
 );
 
+CREATE UNIQUE INDEX unique_email ON AUTHORS(email);
+
+CREATE SEQUENCE authors_seq START WITH 1;
+
+-- set autoincrement id on create
+CREATE OR REPLACE TRIGGER author_id
+BEFORE INSERT ON authors
+FOR EACH ROW
+
+BEGIN
+  SELECT authors_seq.NEXTVAL
+  INTO   :new.id
+  FROM   dual;
+END;
+
+
 CREATE TABLE recipes (
   id NUMBER PRIMARY KEY,
   name VARCHAR2(50) NOT NULL,
@@ -22,6 +38,22 @@ CREATE TABLE recipes (
   CONSTRAINT recipe_author_fk FOREIGN KEY(author_id) REFERENCES authors(id)
 );
 
+CREATE UNIQUE INDEX unique_email ON AUTHORS(email);
+
+CREATE SEQUENCE recipes_seq START WITH 1;
+
+-- set autoincrement id on create
+CREATE OR REPLACE TRIGGER recipes_id
+BEFORE INSERT ON recipes
+FOR EACH ROW
+
+BEGIN
+  SELECT recipes_seq.NEXTVAL
+  INTO   :new.id
+  FROM   dual;
+END;
+
+
 CREATE TABLE meal_images (
   id NUMBER PRIMARY KEY,
   name VARCHAR2(50),
@@ -29,6 +61,20 @@ CREATE TABLE meal_images (
   recipe_id NUMBER NOT NULL,
   CONSTRAINT meal_image_recipe_fk FOREIGN KEY(recipe_id) REFERENCES recipes(id)
 );
+
+CREATE SEQUENCE meal_images_seq START WITH 1;
+
+-- set autoincrement id on create
+CREATE OR REPLACE TRIGGER meal_image_id
+BEFORE INSERT ON meal_images
+FOR EACH ROW
+
+BEGIN
+  SELECT meal_images_seq.NEXTVAL
+  INTO   :new.id
+  FROM   dual;
+END;
+
 
 CREATE TABLE ingredients (
   id NUMBER PRIMARY KEY,

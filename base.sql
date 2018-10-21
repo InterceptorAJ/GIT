@@ -68,6 +68,8 @@ CREATE OR REPLACE PROCEDURE ADD_RECIPE_IMAGE (
     image ORDImage;
     ctx RAW(64) := NULL;
     row_id urowid;
+    RECIPE_NOT_FOUND exception;
+    PRAGMA EXCEPTION_INIT(RECIPE_NOT_FOUND, -2291);
   BEGIN
     INSERT INTO MEAL_IMAGES (name, recipe_id, image)
       VALUES (file_name, recipe_id, ORDImage.init('FILE', 'MEDIA_FILES', file_name))
@@ -76,6 +78,9 @@ CREATE OR REPLACE PROCEDURE ADD_RECIPE_IMAGE (
       UPDATE meal_images SET image = image WHERE row_id = row_id;
       COMMIT;
       DBMS_OUTPUT.PUT_LINE('Zdjecie zostalo dodane pomyslnie');
+    EXCEPTION
+    WHEN RECIPE_NOT_FOUND THEN
+      DBMS_OUTPUT.PUT_LINE('Podany przepis nie istnieje (id:' || recipe_id || ')');
 END;
 
 EXECUTE ADD_RECIPE_IMAGE(7, 'banan.jpg')
@@ -111,3 +116,78 @@ BEGIN
 END;
 
 EXECUTE EXPORT_MEAL_IMAGES(1);
+
+
+CREATE OR REPLACE PROCEDURE ADD_INGREDIENT (
+    name INGREDIENTS.name%TYPE,
+    file_name VARCHAR2
+  )
+  IS
+    image ORDImage;
+    ctx RAW(64) := NULL;
+    row_id urowid;
+  BEGIN
+    INSERT INTO INGREDIENTS (name, image)
+      VALUES (name, ORDImage.init('FILE', 'MEDIA_FILES', file_name))
+      RETURNING image, rowid INTO image, row_id;
+      image.import(ctx);
+      UPDATE ingredients SET image = image WHERE row_id = row_id;
+      COMMIT;
+      DBMS_OUTPUT.PUT_LINE('Skladnik zostal dodany pomyslnie');
+END;
+
+
+EXECUTE add_ingredient('name', 'banan.jpg');
+
+
+CREATE OR REPLACE PROCEDURE ADD_RECIPE_ING (
+    rec_id INGREDIENTS_RECIPES.recipe_id%TYPE,
+    ing_id INGREDIENTS_RECIPES.ingridient_id%TYPE,
+    qua INGREDIENTS_RECIPES.quantity%TYPE
+  )
+  IS
+    AUTHOR_NOT_FOUND exception;
+    PRAGMA EXCEPTION_INIT(AUTHOR_NOT_FOUND, -2291);
+  BEGIN
+    INSERT INTO RECIPES (recipe_id, ingridient_id, quantity)
+      VALUES (rec_id, ing_id, qua);
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('Skladnik zostal przypisany do przepisu pomyslnie');
+    EXCEPTION
+    WHEN AUTHOR_NOT_FOUND THEN
+      DBMS_OUTPUT.PUT_LINE('Podany autor nie istnieje (id:)');
+END;
+
+
+CREATE OR REPLACE PROCEDURE ADD_RECIPE_ING (
+    rec_id INGREDIENTS_RECIPES.recipe_id%TYPE,
+    ingr_id INGREDIENTS_RECIPES.ingredient_id%TYPE,
+    quantity INGREDIENTS_RECIPES.quantity%TYPE
+  )
+  IS
+    recipe_count NUMBER;
+    ingr_count NUMBER;
+    ALREADY_EXISTS exception;
+    PRAGMA EXCEPTION_INIT(ALREADY_EXISTS, -1);
+  BEGIN
+    SELECT count(*) INTO recipe_count FROM recipes WHERE id = rec_id;
+    SELECT count(*) INTO ingr_count FROM ingredients WHERE id = ingr_id;
+    IF recipe_count = 0 THEN
+      DBMS_OUTPUT.PUT_LINE('Podany przepis nie istnieje');
+    ELSIF ingr_count = 0 THEN
+      DBMS_OUTPUT.PUT_LINE('Podany skladnik nie istnieje');
+    ELSIF quantity <= 0 THEN
+      DBMS_OUTPUT.PUT_LINE('Ilosc musi byc dodatnia');
+    ELSE
+      INSERT INTO INGREDIENTS_RECIPES (recipe_id, ingredient_id, quantity)
+        VALUES (rec_id, ingr_id, quantity);
+      COMMIT;
+      DBMS_OUTPUT.PUT_LINE('Skladnik zostal przypisany do przepisu pomyslnie');
+    END IF;
+    EXCEPTION
+      WHEN ALREADY_EXISTS THEN
+        UPDATE INGREDIENTS_RECIPES SET quantity = quantity;
+        DBMS_OUTPUT.PUT_LINE('Ilosc skladnika zostala zaktualizana');
+END;
+
+EXECUTE add_recipe_ing(1,1,1)

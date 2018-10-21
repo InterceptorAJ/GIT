@@ -1,9 +1,11 @@
 CREATE DIRECTORY MEDIA_FILES AS '/home/oracle/MEDIA_FILES';
 commit;
 
+CREATE DIRECTORY export_dir AS '/home/oracle/export';
+commit;
+
 -- use this to enable dbms logs
 SET serveroutput ON SIZE 1000000
-
 
 --
 -- AUTHORS
@@ -54,7 +56,6 @@ END;
 
 EXECUTE ADD_RECIPE('name', 'desd', 1)
 
-
 --
 -- RECIPES IMAGES
 --
@@ -77,4 +78,36 @@ CREATE OR REPLACE PROCEDURE ADD_RECIPE_IMAGE (
       DBMS_OUTPUT.PUT_LINE('Zdjecie zostalo dodane pomyslnie');
 END;
 
-EXECUTE ADD_RECIPE_IMAGE(1, 'banan.jpg')
+EXECUTE ADD_RECIPE_IMAGE(7, 'banan.jpg')
+EXECUTE ADD_RECIPE_IMAGE(1, 'kiwi.jpg')
+
+
+CREATE OR REPLACE PROCEDURE EXPORT_MEAL_IMAGES (
+  recipe MEAL_IMAGES.recipe_id%TYPE
+) IS
+    CURSOR images IS
+      SELECT image, name
+        FROM MEAL_IMAGES WHERE recipe_id = recipe;
+  image_row images%ROWTYPE;
+  image ORDSYS.ORDIMAGE;
+  ctx raw(64) := null;
+  has_element boolean := false;
+BEGIN
+  OPEN images;
+    LOOP
+      FETCH images INTO image_row;
+      EXIT WHEN images%NOTFOUND;
+      DBMS_OUTPUT.PUT_LINE(recipe);
+      has_element := true;
+      image := image_row.image;
+      image.export(ctx, 'FILE', 'EXPORT_DIR', 'export_' || image_row.name);
+    END LOOP;
+  CLOSE images;
+  IF has_element then
+    DBMS_OUTPUT.PUT_LINE('Zdjecie zostalo wyeksportowane');
+  ELSE
+    DBMS_OUTPUT.PUT_LINE('Podany przepis nie istnieje');
+  END IF;
+END;
+
+EXECUTE EXPORT_MEAL_IMAGES(1);

@@ -38,8 +38,6 @@ CREATE TABLE recipes (
   CONSTRAINT recipe_author_fk FOREIGN KEY(author_id) REFERENCES authors(id)
 );
 
-CREATE UNIQUE INDEX unique_email ON AUTHORS(email);
-
 CREATE SEQUENCE recipes_seq START WITH 1;
 
 -- set autoincrement id on create
@@ -81,6 +79,20 @@ CREATE TABLE ingredients (
   name VARCHAR2(50) NOT NULL,
   image ORDIMAGE NOT NULL
 );
+
+CREATE SEQUENCE ingredients_seq START WITH 1;
+
+-- set autoincrement id on create
+CREATE OR REPLACE TRIGGER ingredient_id
+BEFORE INSERT ON ingredients
+FOR EACH ROW
+
+BEGIN
+  SELECT ingredients_seq.NEXTVAL
+  INTO   :new.id
+  FROM   dual;
+END;
+
 
 CREATE TABLE ingredients_recipes (
   recipe_id NUMBER NOT NULL,

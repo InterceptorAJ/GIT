@@ -97,6 +97,7 @@ END;
 CREATE TABLE ingredients_recipes (
   recipe_id NUMBER NOT NULL,
   ingridient_id NUMBER NOT NULL,
+  quantity NUMBER DEFAULT 1,
   CONSTRAINT recipe_mtm_fk FOREIGN KEY(recipe_id) REFERENCES recipes(id),
   CONSTRAINT ingidient_mtm_fk FOREIGN KEY(ingridient_id) REFERENCES ingredients(id),
   CONSTRAINT ingredients_recipes_pk PRIMARY KEY (recipe_id, ingridient_id)

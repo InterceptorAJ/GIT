@@ -65,7 +65,7 @@ CREATE OR REPLACE PROCEDURE ADD_RECIPE_IMAGE (
     file_name VARCHAR2
   )
   IS
-    image ORDImage;
+    img ORDImage;
     ctx RAW(64) := NULL;
     row_id urowid;
     RECIPE_NOT_FOUND exception;
@@ -73,9 +73,9 @@ CREATE OR REPLACE PROCEDURE ADD_RECIPE_IMAGE (
   BEGIN
     INSERT INTO MEAL_IMAGES (name, recipe_id, image)
       VALUES (file_name, recipe_id, ORDImage.init('FILE', 'MEDIA_FILES', file_name))
-      RETURNING image, rowid INTO image, row_id;
-      image.import(ctx);
-      UPDATE meal_images SET image = image WHERE row_id = row_id;
+      RETURNING image, rowid INTO img, row_id;
+      img.import(ctx);
+      UPDATE meal_images SET image = img WHERE row_id = row_id;
       COMMIT;
       DBMS_OUTPUT.PUT_LINE('Zdjecie zostalo dodane pomyslnie');
     EXCEPTION
@@ -123,17 +123,17 @@ CREATE OR REPLACE PROCEDURE ADD_INGREDIENT (
     file_name VARCHAR2
   )
   IS
-    image ORDImage;
+    img ORDImage;
     ctx RAW(64) := NULL;
     row_id urowid;
   BEGIN
-    INSERT INTO INGREDIENTS (name, image)
-      VALUES (name, ORDImage.init('FILE', 'MEDIA_FILES', file_name))
-      RETURNING image, rowid INTO image, row_id;
-      image.import(ctx);
-      UPDATE ingredients SET image = image WHERE row_id = row_id;
-      COMMIT;
-      DBMS_OUTPUT.PUT_LINE('Skladnik zostal dodany pomyslnie');
+    INSERT INTO ingredients (name, image)
+    VALUES (name, ORDImage.init('FILE', 'MEDIA_FILES', file_name))
+    RETURNING image, rowid INTO img, row_id;
+    img.import(ctx);
+    UPDATE ingredients SET image = img WHERE rowid = row_id;
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('Skladnik zostal dodany pomyslnie');
 END;
 
 
@@ -188,6 +188,43 @@ CREATE OR REPLACE PROCEDURE ADD_RECIPE_ING (
       WHEN ALREADY_EXISTS THEN
         UPDATE INGREDIENTS_RECIPES SET quantity = quantity;
         DBMS_OUTPUT.PUT_LINE('Ilosc skladnika zostala zaktualizana');
+
 END;
 
 EXECUTE add_recipe_ing(1,1,1)
+
+CREATE OR REPLACE PROCEDURE INGREDIENT_TO_PNG (
+  ing_id INGREDIENTS.id%TYPE,
+  new_name VARCHAR2
+) IS
+  obr1 ORDimage;
+  ctx raw(64) :=null;
+BEGIN
+    SELECT image INTO obr1 FROM ingredients
+    WHERE id=ing_id FOR UPDATE of image;
+
+    obr1.process('fileFormat=PNGF');
+    UPDATE ingredients set image = obr1 WHERE id=1;
+    COMMIT;
+    obr1.export(ctx, 'FILE', 'EXPORT_DIR', new_name || '.png');
+    DBMS_OUTPUT.PUT_LINE('Zdjecie zostalo przekonwertowane do formatu png');
+END;
+
+
+CREATE OR REPLACE PROCEDURE SCALE_INGREDIENT (
+  ing_id INGREDIENTS.id%TYPE,
+  new_name VARCHAR2,
+  xScale float,
+  yScale float
+) IS
+  obr1 ORDimage;
+  ctx raw(64) :=null;
+BEGIN
+    SELECT image INTO obr1 FROM ingredients
+    WHERE id=ing_id FOR UPDATE of image;
+    obr1.process('xScale=' || xScale);
+    obr1.process('yScale=' || yScale);
+
+    obr1.export(ctx, 'FILE', 'EXPORT_DIR', new_name || '.png');
+    DBMS_OUTPUT.PUT_LINE('Zdjecie zostalo przeskalowane poprawnie');
+END;

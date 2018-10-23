@@ -6,6 +6,9 @@
 --DROP TABLE authors;
 
 
+-- TABLE DROPING
+
+
 CREATE TABLE authors (
   id NUMBER PRIMARY KEY,
   first_name VARCHAR2(32) NOT NULL,
@@ -16,13 +19,13 @@ CREATE TABLE authors (
 
 CREATE UNIQUE INDEX unique_email ON AUTHORS(email);
 
+DROP SEQUENCE authors_seq
 CREATE SEQUENCE authors_seq START WITH 1;
 
 -- set autoincrement id on create
 CREATE OR REPLACE TRIGGER author_id
 BEFORE INSERT ON authors
 FOR EACH ROW
-
 BEGIN
   SELECT authors_seq.NEXTVAL
   INTO   :new.id
@@ -38,6 +41,7 @@ CREATE TABLE recipes (
   CONSTRAINT recipe_author_fk FOREIGN KEY(author_id) REFERENCES authors(id)
 );
 
+DROP SEQUENCE recipes_seq;
 CREATE SEQUENCE recipes_seq START WITH 1;
 
 -- set autoincrement id on create
@@ -60,6 +64,7 @@ CREATE TABLE meal_images (
   CONSTRAINT meal_image_recipe_fk FOREIGN KEY(recipe_id) REFERENCES recipes(id)
 );
 
+DROP SEQUENCE meal_images_seq;
 CREATE SEQUENCE meal_images_seq START WITH 1;
 
 -- set autoincrement id on create
@@ -77,9 +82,10 @@ END;
 CREATE TABLE ingredients (
   id NUMBER PRIMARY KEY,
   name VARCHAR2(50) NOT NULL,
-  image ORDIMAGE NOT NULL
+  image ORDIMAGE
 );
 
+DROP SEQUENCE ingredients_seq;
 CREATE SEQUENCE ingredients_seq START WITH 1;
 
 -- set autoincrement id on create

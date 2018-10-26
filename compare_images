@@ -1,0 +1,77 @@
+-- schema to compare two images by signature, 
+
+
+CREATE OR REPLACE TYPE ORDImageSignature
+AS OBJECT
+(
+
+  signature BLOB,
+
+STATIC FUNCTION init RETURN ORDImageSignature,
+
+STATIC FUNCTION evaluateScore(sig1    IN ORDImageSignature,
+                              sig2    IN ORDImageSignature,
+                              weights IN VARCHAR2)
+  RETURN FLOAT,
+
+STATIC FUNCTION isSimilar(sig1      IN ORDImageSignature,
+                          sig2      IN ORDImageSignature,
+                          weights   IN VARCHAR2,
+                          threshold IN FLOAT)
+  RETURN INTEGER,
+
+MEMBER PROCEDURE generateSignature(image  IN ORDImage)
+);
+
+-- This constructor is a static method that initializes the ORDImageSignature signature attribute to empty_blob.
+  
+BEGIN
+ INSERT INTO ingredients (id, name, image, image_signature) 
+  VALUES (1, 'banan', ORDSYS.ORDImage.init('FILE', 'MEDIA_FILES','banan.jpg'),
+  ORDSYS.ORDImageSignature.init());
+ INSERT INTO ingredients (id, name, image, image_signature) 
+  VALUES (2, 'arbuz', ORDSYS.ORDImage.init('FILE', 'MEDIA_FILES','arbuz.jpg'),
+  ORDSYS.ORDImageSignature.init());
+ INSERT INTO ingredients (id,name, image, image_signature) 
+  VALUES (3, 'truskawka', ORDSYS.ORDImage.init('FILE', 'MEDIA_FILES','truskawka.jpg'),
+  ORDSYS.ORDImageSignature.init());
+COMMIT;
+END;
+
+-- This function returns a FLOAT value between 0.0 and 100.0, 
+-- where 0.0 means the images are identical and 100.0 means the images are completely different.
+
+
+DECLARE
+ t_image     ORDSYS.ORDImage;
+ c_image    ORDSYS.ORDImage;
+ image_sig   ORDSYS.ORDImageSignature;
+ compare_sig ORDSYS.ORDImageSignature;
+ score FLOAT;
+BEGIN
+ SELECT p.image, p.image_signature INTO t_image, image_sig 
+  FROM ingredients p
+  WHERE p.id = 1 FOR UPDATE;
+ -- Generate a signature:
+ image_sig.generateSignature(t_image);
+ UPDATE ingredients p SET p.image_signature = image_sig 
+  WHERE id =1;
+ SELECT p.image, p.image_signature INTO c_image, compare_sig
+  FROM ingredients p
+  WHERE p.id = 2 FOR UPDATE;
+ -- Generate a signature:
+ compare_sig.generateSignature(c_image);
+ UPDATE ingredients p SET p.image_signature = compare_sig
+  WHERE id = 2;
+SELECT p.image, p.image_signature INTO t_image, image_sig 
+ FROM ingredients p 
+ WHERE p.id  = 1;
+SELECT p.image, p.image_signature INTO c_image, compare_sig 
+ FROM ingredients p
+ WHERE p.id = 2;
+ -- Compare two images for similarity based on image color:
+ score:=ORDSYS.ORDImageSignature.evaluateScore(image_sig, 
+  compare_sig,'color="1.0",texture=0,shape=0,location=0');
+ DBMS_OUTPUT.PUT_LINE('Score is ' || score);
+END;
+/

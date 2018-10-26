@@ -82,7 +82,8 @@ END;
 CREATE TABLE ingredients (
   id NUMBER PRIMARY KEY,
   name VARCHAR2(50) NOT NULL,
-  image ORDIMAGE
+  image ORDIMAGE,
+  image_signature ORDSYS.ORDImageSignature  -- potrzebne do porównywania obrazów
 );
 
 DROP SEQUENCE ingredients_seq;

@@ -1,4 +1,4 @@
--- TABLE DROPING
+﻿-- TABLE DROPING
 --DROP TABLE ingredients_recipes;
 --DROP TABLE ingredients;
 --DROP TABLE meal_images;
@@ -12,9 +12,9 @@
 CREATE TABLE authors (
   id NUMBER PRIMARY KEY,
   first_name VARCHAR2(32) NOT NULL,
-  last_name VARCHAR(32) NOT NULL,
-  email VARCHAR(50) NOT NULL,
-  phone_no VARCHAR(10)
+  last_name VARCHAR2(32) NOT NULL,
+  email VARCHAR2(50) NOT NULL,
+  phone_no VARCHAR2(10)
 );
 
 CREATE UNIQUE INDEX unique_email ON AUTHORS(email);
@@ -79,11 +79,15 @@ BEGIN
 END;
 
 
+
 CREATE TABLE ingredients (
   id NUMBER PRIMARY KEY,
   name VARCHAR2(50) NOT NULL,
   image ORDIMAGE,
-  image_signature ORDSYS.ORDImageSignature  -- potrzebne do porównywania obrazów
+  image_signature ORDSYS.ORDImageSignature,  -- potrzebne do porównywania obrazów
+  metaORDImage XMLTYPE,
+  metaXMP      XMLTYPE,
+  tags VARCHAR2(4000)
 );
 
 DROP SEQUENCE ingredients_seq;

@@ -126,6 +126,11 @@ CREATE OR REPLACE PROCEDURE ADD_INGREDIENT (
     img ORDImage;
     ctx RAW(64) := NULL;
     row_id urowid;
+    metav XMLSequenceType;
+    meta_root VARCHAR2(40);
+    xmlORD XMLType;
+    xmlXMP XMLType;
+    img_tags VARCHAR2(4000);
   BEGIN
     INSERT INTO ingredients (name, image)
     VALUES (name, ORDImage.init('FILE', 'MEDIA_FILES', file_name))
@@ -133,9 +138,41 @@ CREATE OR REPLACE PROCEDURE ADD_INGREDIENT (
     img.import(ctx);
     UPDATE ingredients SET image = img WHERE rowid = row_id;
     COMMIT;
+    
+    metav := img.getMetadata( 'ALL' );
+ 
+    FOR i IN 1..metav.count() LOOP
+      meta_root := metav(i).getRootElement();
+      CASE meta_root
+        WHEN 'ordImageAttributes' THEN xmlORD := metav(i);
+        WHEN 'xmpMetadata' THEN xmlXMP := metav(i);
+        ELSE NULL;
+      END CASE;
+    END LOOP;
+
+    UPDATE ingredients 
+    SET metaORDImage = xmlORD,
+        metaXMP = xmlXMP
+    WHERE rowid = row_id;    
+    
+        UPDATE ingredients 
+    SET metaORDImage = xmlORD,
+        metaXMP = xmlXMP
+    WHERE rowid = row_id;    
+    
+    SELECT 
+      extract(metaXMP, '/xmpMetadata/*[0]/*[0]/*[0]/*[0]/*[0]/text()', 'xmlns="http://xmlns.oracle.com/ord/meta/xmp"').getStringVal() 
+      INTO img_tags 
+      from ingredients 
+      WHERE rowid = row_id;
+    
+    UPDATE ingredients 
+    SET tags = img_tags
+    WHERE rowid = row_id;    
+
+        
     DBMS_OUTPUT.PUT_LINE('Skladnik zostal dodany pomyslnie');
 END;
-
 
 EXECUTE add_ingredient('name', 'banan.jpg');
 
@@ -228,3 +265,4 @@ BEGIN
     obr1.export(ctx, 'FILE', 'EXPORT_DIR', new_name || '.png');
     DBMS_OUTPUT.PUT_LINE('Zdjecie zostalo przeskalowane poprawnie');
 END;
+

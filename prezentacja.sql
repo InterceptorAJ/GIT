@@ -37,6 +37,8 @@ CREATE TABLE recipes (
   CONSTRAINT recipe_author_fk FOREIGN KEY(author_id) REFERENCES authors(id)
 );
 
+ALTER TABLE recipes ADD recipe_code VARCHAR(20);
+
 DROP SEQUENCE recipes_seq;
 CREATE SEQUENCE recipes_seq START WITH 1;
 

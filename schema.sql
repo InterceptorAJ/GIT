@@ -87,7 +87,8 @@ CREATE TABLE ingredients (
   image_signature ORDSYS.ORDImageSignature,  -- potrzebne do porównywania obrazów
   metaORDImage XMLTYPE,
   metaXMP      XMLTYPE,
-  tags VARCHAR2(4000)
+  tags VARCHAR2(4000),
+  fileFormat VARCHAR2(200)
 );
 
 DROP SEQUENCE ingredients_seq;

@@ -56,36 +56,6 @@ END;
 
 EXECUTE ADD_RECIPE('name', 'desd', 1)
 
---
--- RECIPES IMAGES
---
-
-CREATE OR REPLACE PROCEDURE ADD_RECIPE_IMAGE (
-    recipe_id MEAL_IMAGES.recipe_id%TYPE,
-    file_name VARCHAR2
-  )
-  IS
-    img ORDImage;
-    ctx RAW(64) := NULL;
-    row_id urowid;
-    RECIPE_NOT_FOUND exception;
-    PRAGMA EXCEPTION_INIT(RECIPE_NOT_FOUND, -2291);
-  BEGIN
-    INSERT INTO MEAL_IMAGES (name, recipe_id, image)
-      VALUES (file_name, recipe_id, ORDImage.init('FILE', 'MEDIA_FILES', file_name))
-      RETURNING image, rowid INTO img, row_id;
-      img.import(ctx);
-      UPDATE meal_images SET image = img WHERE row_id = row_id;
-      COMMIT;
-      DBMS_OUTPUT.PUT_LINE('Zdjecie zostalo dodane pomyslnie');
-    EXCEPTION
-    WHEN RECIPE_NOT_FOUND THEN
-      DBMS_OUTPUT.PUT_LINE('Podany przepis nie istnieje (id:' || recipe_id || ')');
-END;
-
-EXECUTE ADD_RECIPE_IMAGE(7, 'banan.jpg')
-EXECUTE ADD_RECIPE_IMAGE(1, 'kiwi.jpg')
-
 
 CREATE OR REPLACE PROCEDURE EXPORT_MEAL_IMAGES (
   recipe MEAL_IMAGES.recipe_id%TYPE
@@ -131,6 +101,7 @@ CREATE OR REPLACE PROCEDURE ADD_INGREDIENT (
     xmlORD XMLType;
     xmlXMP XMLType;
     img_tags VARCHAR2(4000);
+    format  VARCHAR2(200);
   BEGIN
     INSERT INTO ingredients (name, image)
     VALUES (name, ORDImage.init('FILE', 'MEDIA_FILES', file_name))
@@ -140,6 +111,8 @@ CREATE OR REPLACE PROCEDURE ADD_INGREDIENT (
     COMMIT;
     
     metav := img.getMetadata( 'ALL' );
+    format := img.getFileFormat();
+    
  
     FOR i IN 1..metav.count() LOOP
       meta_root := metav(i).getRootElement();
@@ -161,20 +134,25 @@ CREATE OR REPLACE PROCEDURE ADD_INGREDIENT (
     WHERE rowid = row_id;    
     
     SELECT 
-      extract(metaXMP, '/xmpMetadata/*[0]/*[0]/*[0]/*[0]/*[0]/text()', 'xmlns="http://xmlns.oracle.com/ord/meta/xmp"').getStringVal() 
-      INTO img_tags 
+      extract(metaXMP, '/xmpMetadata/*[0]/*[0]/*[0]/*[0]/*[0]/text()', 'xmlns="http://xmlns.oracle.com/ord/meta/xmp"').getStringVal()
+      INTO img_tags
       from ingredients 
       WHERE rowid = row_id;
+      
     
     UPDATE ingredients 
-    SET tags = img_tags
+    SET tags = img_tags, fileFormat = format 
     WHERE rowid = row_id;    
+    COMMIT;
 
         
     DBMS_OUTPUT.PUT_LINE('Skladnik zostal dodany pomyslnie');
 END;
 
+
 EXECUTE add_ingredient('name', 'banan.jpg');
+
+SELECT id, name from ingredients WHERE tags like '%banan%';
 
 
 CREATE OR REPLACE PROCEDURE ADD_RECIPE_ING (
@@ -188,7 +166,7 @@ CREATE OR REPLACE PROCEDURE ADD_RECIPE_ING (
   BEGIN
     INSERT INTO RECIPES (recipe_id, ingridient_id, quantity)
       VALUES (rec_id, ing_id, qua);
-    COMMIT;
+    COMMIT ;
     DBMS_OUTPUT.PUT_LINE('Skladnik zostal przypisany do przepisu pomyslnie');
     EXCEPTION
     WHEN AUTHOR_NOT_FOUND THEN

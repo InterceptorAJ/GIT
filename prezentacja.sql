@@ -51,6 +51,25 @@ BEGIN
   FROM   dual;
 END;
 
+CREATE OR REPLACE TRIGGER recipe_code
+BEFORE INSERT ON recipes
+FOR EACH ROW
+DECLARE 
+  fname VARCHAR2(30);
+  temp NUMBER;
+    
+BEGIN
+  SELECT first_name
+    INTO   fname
+    FROM   authors
+    WHERE id = :new.author_id;
+  SELECT count(*) INTO temp FROM recipes WHERE recipe_code LIKE fname || '-%';
+  SELECT fname || '-' || (temp + 1)
+    INTO :new.recipe_code
+    FROM dual; 
+END;
+
+
 
 CREATE TABLE ingredients (
   id NUMBER PRIMARY KEY,

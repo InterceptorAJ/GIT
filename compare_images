@@ -40,7 +40,7 @@ END;
 
 -- Funkcja zwraca wartości od 0.0 do 100.0, 
 -- Im mniejsza wartość tym obrazki są bardziej podobne do siebie
--- porównanie banana z arbuzem
+-- porównanie banana z arbuzem atrybut porównawczy to kolor
 
 DECLARE
  t_image     ORDSYS.ORDImage;
@@ -52,15 +52,13 @@ BEGIN
  SELECT p.image, p.image_signature INTO t_image, image_sig 
   FROM ingredients p
   WHERE p.id = 1 FOR UPDATE;
- -- Generate a signature:
- image_sig.generateSignature(t_image);
+image_sig.generateSignature(t_image);
  UPDATE ingredients p SET p.image_signature = image_sig 
   WHERE id =1;
  SELECT p.image, p.image_signature INTO c_image, compare_sig
   FROM ingredients p
   WHERE p.id = 2 FOR UPDATE;
- -- Generate a signature:
- compare_sig.generateSignature(c_image);
+compare_sig.generateSignature(c_image);
  UPDATE ingredients p SET p.image_signature = compare_sig
   WHERE id = 2;
 SELECT p.image, p.image_signature INTO t_image, image_sig 
@@ -69,46 +67,30 @@ SELECT p.image, p.image_signature INTO t_image, image_sig
 SELECT p.image, p.image_signature INTO c_image, compare_sig 
  FROM ingredients p
  WHERE p.id = 2;
- -- Compare two images for similarity based on image color:
- score:=ORDSYS.ORDImageSignature.evaluateScore(image_sig, 
+score:=ORDSYS.ORDImageSignature.evaluateScore(image_sig, 
   compare_sig,'color="1.0",texture=0,shape=0,location=0');
- DBMS_OUTPUT.PUT_LINE('Score is ' || score);
+ DBMS_OUTPUT.PUT_LINE('Wynik to ' || score);
 END;
 /
 
 
--- porównanie banana z truskawką
+-- porównanie podobną metodą banana z truskawką
 
 DECLARE
- t_image     ORDSYS.ORDImage;
- c_image    ORDSYS.ORDImage;
- image_sig   ORDSYS.ORDImageSignature;
- compare_sig ORDSYS.ORDImageSignature;
- score FLOAT;
+ image_sig1 ORDSYS.ORDImageSignature;
+ image_sig2 ORDSYS.ORDImageSignature;
+ value     INTEGER;
 BEGIN
- SELECT p.image, p.image_signature INTO t_image, image_sig 
-  FROM ingredients p
-  WHERE p.id = 1 FOR UPDATE;
- -- Generate a signature:
- image_sig.generateSignature(t_image);
- UPDATE ingredients p SET p.image_signature = image_sig 
-  WHERE id =1;
- SELECT p.image, p.image_signature INTO c_image, compare_sig
-  FROM ingredients p
-  WHERE p.id = 3 FOR UPDATE;
- -- Generate a signature:
- compare_sig.generateSignature(c_image);
- UPDATE ingredients p SET p.image_signature = compare_sig
+ SELECT image_signature INTO image_sig1 FROM ingredients
+  WHERE id = 1;
+SELECT image_signature INTO image_sig2 FROM ingredients
   WHERE id = 3;
-SELECT p.image, p.image_signature INTO t_image, image_sig 
- FROM ingredients p 
- WHERE p.id  = 1;
-SELECT p.image, p.image_signature INTO c_image, compare_sig 
- FROM ingredients p
- WHERE p.id = 3;
- -- Compare two images for similarity based on image color:
- score:=ORDSYS.ORDImageSignature.evaluateScore(image_sig, 
-  compare_sig,'color="1.0",texture=0,shape=0,location=0');
- DBMS_OUTPUT.PUT_LINE('Score is ' || score);
+ value := ORDSYS.ORDImageSignature.isSimilar(image_sig1,
+ image_sig2,'color="1.0",texture=0,shape=0,location=0',10);
+ IF value = 1 THEN
+   DBMS_OUTPUT.PUT_LINE('Zdjęcia są podobne');
+ ELSIF value = 0 THEN
+   DBMS_OUTPUT.PUT_LINE('Zdjęcia nie są podobne');
+ END IF;
 END;
 /
